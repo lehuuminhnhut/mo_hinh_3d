@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Phòng thí nghiệm 3D – Phản ứng cộng hữu cơ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#0c0e1c;--panel:#14172b;--panel2:#1c2040;--fg:#eceefc;--mut:#9aa1c4;--acc:#8b9bff;--hot:#ffd166;--bd:#2a2f55;--accfg:#0c0e1c;color-scheme:dark}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f0fa;--panel:#fff;--panel2:#eceaf9;--fg:#17172e;--mut:#5f6385;--acc:#4a4fd6;--hot:#a86a00;--bd:#dcdaf0;--accfg:#fff;color-scheme:light}}
+:root[data-theme="light"]{--bg:#f1f0fa;--panel:#fff;--panel2:#eceaf9;--fg:#17172e;--mut:#5f6385;--acc:#4a4fd6;--hot:#a86a00;--bd:#dcdaf0;--accfg:#fff;color-scheme:light}
+:root[data-theme="dark"]{--bg:#0c0e1c;--panel:#14172b;--panel2:#1c2040;--fg:#eceefc;--mut:#9aa1c4;--acc:#8b9bff;--hot:#ffd166;--bd:#2a2f55;--accfg:#0c0e1c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 "Bricolage Grotesque","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+.app{max-width:1180px;margin:0 auto;padding:22px 16px 36px}
+header{display:flex;gap:14px;align-items:center;margin-bottom:22px}
+.mark{flex:none;color:var(--mut)}
+h1{font-size:clamp(1.6rem,4.2vw,2.5rem);line-height:1.1;margin:0;font-weight:700;letter-spacing:-.025em}
+.sub{margin:4px 0 0;color:var(--mut);max-width:60ch}
+.layout{display:grid;grid-template-columns:minmax(290px,350px) minmax(0,1fr);grid-template-areas:"top stage" "lib stage";gap:16px 24px;align-items:start}
+.top{grid-area:top}.stagecol{grid-area:stage;min-width:0}.lib{grid-area:lib}
+.panel{background:var(--panel);border:1px solid var(--bd);border-radius:18px;padding:16px}
+label.lb{display:block;font-weight:600;margin-bottom:8px}
+.row{display:flex;gap:8px}
+input{flex:1;min-width:0;padding:12px 14px;font:inherit;font-size:1.02rem;border-radius:12px;border:1px solid var(--bd);background:var(--bg);color:var(--fg)}
+input::placeholder{color:var(--mut)}
+input:focus-visible,button:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button{font:inherit;cursor:pointer;border-radius:12px;border:1px solid var(--bd);background:var(--panel2);color:var(--fg);padding:10px 14px;transition:border-color .15s,background .15s}
+button:hover{border-color:var(--acc)}
+button.go{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:700;padding:12px 18px}
+#msg{color:var(--hot);margin-top:8px;font-size:.92rem}#msg:empty{display:none}
+.hintline{color:var(--mut);font-size:.85rem;margin:10px 0 0}
+.lib h2{font-size:1.05rem;margin:0 0 10px;font-weight:700}
+.chips{display:flex;flex-direction:column;gap:6px}
+.g{color:var(--mut);font-size:.85rem;margin:10px 0 2px}.g:first-child{margin-top:0}
+.chips button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;background:var(--panel);padding:9px 12px;border-radius:12px}
+.chips button b{font:500 1.05rem "Source Serif 4",Georgia,serif;font-weight:500}
+.chips button small{color:var(--mut);font-size:.8rem;line-height:1.35}
+.chips button[aria-current="true"]{border-color:var(--acc);background:var(--panel2)}
+.eqcard{margin-bottom:14px}
+.eq{font:500 clamp(1.5rem,3.8vw,2.5rem)/1.25 "Source Serif 4",Georgia,serif;margin:0;letter-spacing:.005em}
+.eq i{font-style:normal;color:var(--acc);margin:0 .4em}
+sub{font-size:.62em;line-height:0}
+#rname{color:var(--mut);margin:4px 0 0;max-width:70ch}
+.vars{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.vars:empty{display:none}
+.vars button{border-radius:99px;padding:6px 14px;font-size:.92rem}
+.vars button[aria-pressed=true]{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:600}
+#stage{position:relative;height:clamp(360px,64vh,660px);border-radius:20px;overflow:hidden;border:1px solid var(--bd);background:#0a0f1e}
+canvas{display:block;width:100%;height:100%;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+#phase{position:absolute;left:12px;top:12px;max-width:calc(100% - 24px);padding:7px 14px;border-radius:99px;background:rgba(12,14,28,.7);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);color:#eceefc;font-size:.88rem;pointer-events:none}
+#bar{position:absolute;left:0;bottom:0;height:4px;background:var(--acc);width:0}
+.ctl{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:6px;align-items:center;padding:6px;border-radius:99px;background:rgba(12,14,28,.72);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.14);white-space:nowrap}
+.ctl button,.ctl select{border-radius:99px;padding:7px 14px;font-size:.9rem;background:rgba(255,255,255,.08);border:1px solid transparent;color:#eceefc}
+.ctl select{padding:7px 10px}.ctl option{color:#111}
+#legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+#legend span{display:inline-flex;align-items:center;gap:7px;padding:4px 12px;border-radius:99px;background:var(--panel);border:1px solid var(--bd);color:var(--mut);font-size:.86rem}
+#legend b{display:inline-block;width:11px;height:11px;border-radius:50%;border:1px solid rgba(128,128,160,.5)}
+.hint{color:var(--mut);font-size:.85rem;margin:10px 0 0;max-width:75ch}
+@media (max-width:860px){.layout{grid-template-columns:minmax(0,1fr);grid-template-areas:"top" "stage" "lib"}#stage{height:clamp(340px,58vh,520px)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}canvas{cursor:default}}
+</style>
+</head>
+<body>
+<main class="app">
+<header>
+  <svg class="mark" viewBox="0 0 44 44" width="44" height="44" aria-hidden="true"><path d="M11 31 24 12 36 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><circle cx="11" cy="31" r="7" fill="var(--acc)"/><circle cx="24" cy="12" r="8" fill="var(--hot)"/><circle cx="36" cy="28" r="5.5" fill="var(--fg)"/></svg>
+  <div><h1>Phòng thí nghiệm 3D</h1><p class="sub">Chọn hoặc nhập chất tham gia, xem nguyên tử tái sắp xếp thành sản phẩm ngay trong không gian ba chiều.</p></div>
+</header>
+<div class="layout">
+  <section class="top panel">
+    <form id="f">
+      <label class="lb" for="in">Chất tham gia</label>
+      <div class="row"><input id="in" value="CH2=CH2 + Br2" placeholder="VD: C3H6 + HCl" autocomplete="off" spellcheck="false"><button class="go" type="submit">Mô phỏng</button></div>
+    </form>
+    <div id="msg" role="status"></div>
+    <p class="hintline">Gõ công thức (C2H4, CH2=CH2) hoặc tên (ethylene, acetone, methanal…). Xúc tác như H+, H2SO4 được bỏ qua.</p>
+  </section>
+  <section class="stagecol">
+    <div class="eqcard"><p class="eq" id="eq"></p><p id="rname"></p><div class="vars" id="vars"></div></div>
+    <div id="stage">
+      <canvas id="cv"></canvas><div id="phase"></div>
+      <div class="ctl"><button id="pp" type="button">Tạm dừng</button><button id="rp" type="button">Chạy lại</button><select id="sp" aria-label="Tốc độ"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></div>
+      <div id="bar"></div>
+    </div>
+    <div id="legend"></div>
+    <p class="hint">Kéo để xoay, cuộn hoặc chụm để phóng to. Liên kết đôi và ba hiển thị bằng 2 hoặc 3 thanh.</p>
+  </section>
+  <section class="lib panel"><h2>Thư viện phản ứng</h2><div class="chips" id="chips"></div></section>
+</div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const V=THREE.Vector3,S=1.35,$=s=>document.querySelector(s);
+const EL={H:[0xf4f6fb,.3,'Hiđro'],C:[0x555b69,.46,'Cacbon'],N:[0x4f74ff,.44,'Nitơ'],O:[0xff4a3d,.42,'Oxi'],Cl:[0x3fd45a,.56,'Clo'],Br:[0x9b3d1d,.64,'Brom']};
+// ---- Tạo hình học 3D từ cấu trúc (lai hoá 3=sp3, 2=sp2, 1=sp) ----
+const N=(e,hy,...ch)=>({e,hy,ch}),s=n=>[1,n],d=n=>[2,n],tr=n=>[3,n];
+const C3=(...c)=>N('C',3,...c),C2=(...c)=>N('C',2,...c),O3=(...c)=>N('O',3,...c),Cl=N('Cl',1),Br=N('Br',1),CN=N('C',1,tr(N('N',1)));
+const BLT={'C-C':[1.54,1.34,1.2],'C-H':[1.09],'C-O':[1.43,1.22],'H-O':[.96],'C-Cl':[1.77],'Br-C':[1.94],'Br-Br':[2.28],'C-N':[1.47,1.3,1.16],'Cl-H':[1.27],'Br-H':[1.41]};
+const bl=(a,b,o)=>{const k=[a.e,b.e].sort().join('-');let L=(BLT[k]||[1.5])[o-1]||1.5;if(k==='C-C'&&o===1&&(a.hy===1||b.hy===1))L=1.47;return L};
+const perp=v=>new V().crossVectors(v,Math.abs(v.x)<.9?new V(1,0,0):new V(0,1,0)).normalize();
+function slots(hy,d,r){const o=[d],n=new V().crossVectors(d,r);
+  if(hy===3){for(let k=0;k<3;k++){const g=k*2.0944,rr=r.clone().multiplyScalar(Math.cos(g)).addScaledVector(n,Math.sin(g));o.push(d.clone().multiplyScalar(-1/3).addScaledVector(rr,.9428))}}
+  else if(hy===2){o.push(d.clone().multiplyScalar(-.5).addScaledVector(r,.866),d.clone().multiplyScalar(-.5).addScaledVector(r,-.866))}
+  else o.push(d.clone().negate());return o}
+function embed(root){
+  const at=[],bd=[],VAL={C:4,N:3,O:2,H:1,Cl:1,Br:1};
+  const rec=(nd,pos,dd,r,po,idx)=>{
+    const sl=slots(nd.hy,dd,r);let k=po?1:0;const used=nd.ch.reduce((x,c)=>x+c[0],po);
+    nd.ch.forEach(([o,c])=>{const si=k,dir=sl[k++],p2=pos.clone().addScaledVector(dir,bl(nd,c,o)),ci=at.push([c.e,p2.x,p2.y,p2.z])-1;bd.push([idx,ci,o]);
+      const back=dir.clone().negate();let rc;
+      if(nd.hy===2&&c.hy===2)rc=new V().crossVectors(new V().crossVectors(dd,r),back).normalize();
+      else{const oth=sl[(si+1)%sl.length],pj=oth.clone().addScaledVector(back,-oth.dot(back));rc=pj.length()<.2?perp(back):pj.negate().normalize()}
+      rec(c,p2,back,rc,o,ci)});
+    for(let h=VAL[nd.e]-used;h>0;h--){const dir=sl[k++],p2=pos.clone().addScaledVector(dir,bl(nd,{e:'H'},1)),ci=at.push(['H',p2.x,p2.y,p2.z])-1;bd.push([idx,ci,1])}
+  };
+  at.push([root.e,0,0,0]);rec(root,new V(),new V(1,0,0),new V(0,1,0),0,0);
+  const c=at.reduce((x,a)=>x.add(new V(a[1],a[2],a[3])),new V()).multiplyScalar(1/at.length);
+  return{a:at.map(a=>[a[0],a[1]-c.x,a[2]-c.y,a[3]-c.z]),b:bd};
+}
+const norm=x=>x.toLowerCase().replace(/[\s_]/g,'').replace(/[–—]/g,'-');
+const MOLS={},AL={};
+function D(id,f,n,node,al=[]){MOLS[id]={f,n,...embed(node)};[f,...al].forEach(a=>{const k=norm(a);AL[k]=id;AL[k.replace(/-/g,'')]=id})}
+D('C2H4','CH2=CH2','ethylene',C2(d(C2())),['c2h4','ethene','etilen','etylen','eten']);
+D('Br2','Br2','bromine',N('Br',1,s(Br)),['brom']);
+D('DBE','CH2Br–CH2Br','1,2-dibromoethane',N('Br',1,s(C3(s(C3(s(Br)))))));
+D('H2O','H2O','water',O3(),['water','nuoc','nước']);
+D('EtOH','CH3–CH2OH','ethanol',C3(s(C3(s(O3())))));
+D('iBu','CH2=C(CH3)2','2-methylpropene',C2(d(C2(s(C3()),s(C3())))),['c4h8','ch2=c(ch3)-ch3','ch3-c(ch3)=ch2','2-metylpropen','isobutene','isobuten','isobutilen']);
+D('tBuOH','CH3–C(OH)(CH3)–CH3','2-methylpropan-2-ol',C3(s(C3()),s(C3()),s(C3()),s(O3())));
+D('MB2E','CH3–CH=C(CH3)–CH3','2-methylbut-2-ene',C3(s(C2(d(C2(s(C3()),s(C3())))))),['c5h10','ch3-ch=c(ch3)2','2-metylbut-2-en']);
+D('MBOH','CH3–CH2–C(OH)(CH3)–CH3','2-methylbutan-2-ol',C3(s(C3(s(C3(s(O3()),s(C3()),s(C3())))))));
+D('HCl','HCl','hydrogen chloride',N('H',1,s(Cl)),['axitclohidric','axitclohiđric']);
+D('HBr','HBr','hydrogen bromide',N('H',1,s(Br)));
+D('Pr','CH2=CH–CH3','propene',C2(d(C2(s(C3())))),['c3h6','ch3-ch=ch2','propen','propilen']);
+D('ClEt','CH3–CH2Cl','chloroethane',C3(s(C3(s(Cl)))));
+D('2CP','CH3–CHCl–CH3','2-chloropropane',C3(s(C3(s(Cl),s(C3())))));
+D('1CP','CH3–CH2–CH2Cl','1-chloropropane',C3(s(C3(s(C3(s(Cl)))))));
+D('2B2MP','CH3–C(Br)(CH3)–CH3','2-bromo-2-methylpropane',C3(s(C3()),s(C3()),s(C3()),s(Br)));
+D('1B2MP','CH3–CH(CH3)–CH2Br','1-bromo-2-methylpropane',C3(s(C3(s(C3()),s(C3(s(Br)))))));
+D('HCHO','HCHO','methanal',C2(d(N('O',2))),['ch2o','methanal','formaldehyde','metanal','andehitfomic','anđehitfomic']);
+D('HCN','HCN','hydrogen cyanide',N('H',1,s(CN)),['hydrogencyanide']);
+D('HNC','H–CH(OH)–CN','hydroxy nitrile',O3(s(C3(s(CN)))));
+D('Ac','CH3–CO–CH3','acetone',C3(s(C2(d(N('O',2)),s(C3())))),['(ch3)2co','c3h6o','axeton']);
+D('ACH','CH3–C(OH)(CN)–CH3','2-hydroxy-2-methylpropanenitrile',C3(s(C3()),s(C3()),s(O3()),s(CN)));
+const mk=(t,R,P,dsc,P2)=>({t,R,d:dsc,V:[{P:[P],lab:P2?'Sản phẩm chính: '+MOLS[P].n:''},...(P2?[{P:[P2],lab:'Sản phẩm phụ: '+MOLS[P2].n}]:[])],key:[...R].sort().join('+')});
+const RX=[
+mk('AE',['C2H4','Br2'],'DBE','Cộng halogen: bromine cộng vào ethylene'),
+mk('AE',['C2H4','H2O'],'EtOH','Cộng nước (xúc tác H⁺, tᵒ): ethylene tạo ethanol'),
+mk('AE',['iBu','H2O'],'tBuOH','Cộng nước (H₂SO₄ loãng): sản phẩm chính là 2-methylpropan-2-ol'),
+mk('AE',['MB2E','H2O'],'MBOH','Cộng nước (H₂SO₄ loãng) vào 2-methylbut-2-ene'),
+mk('AE',['C2H4','HCl'],'ClEt','Cộng HCl vào alkene đối xứng'),
+mk('AE',['Pr','HCl'],'2CP','Cộng HCl vào alkene không đối xứng (quy tắc Markovnikov)','1CP'),
+mk('AE',['iBu','HBr'],'2B2MP','Cộng HBr vào alkene không đối xứng (quy tắc Markovnikov)','1B2MP'),
+mk('AN',['HCHO','HCN'],'HNC','Cộng HCN vào aldehyde: tạo hydroxy nitrile'),
+mk('AN',['Ac','HCN'],'ACH','Cộng HCN vào ketone: tạo 2-hydroxy-2-methylpropanenitrile')];
+const fh=f=>f.replace(/(\d+)/g,'<sub>$1</sub>');
+
+// ---- Three.js ----
+const cv=$('#cv'),st=$('#stage');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0f1e);
+const camera=new THREE.PerspectiveCamera(45,1,.1,300);
+scene.add(new THREE.HemisphereLight(0xcfe0ff,0x1a2038,.9));
+const dl=new THREE.DirectionalLight(0xffffff,.9);dl.position.set(6,10,8);scene.add(dl);
+const flash=new THREE.PointLight(0xffa640,0,40);scene.add(flash);
+const grid=new THREE.GridHelper(80,40,0x2a3a66,0x18213d);grid.position.y=-7;scene.add(grid);
+const group=new THREE.Group();scene.add(group);
+const glow=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false}));
+scene.add(glow);
+const sphG=new THREE.SphereGeometry(1,32,24),cylG=new THREE.CylinderGeometry(.075,.075,1,12);
+const bmat={r:new THREE.MeshStandardMaterial({color:0xcfd6e8,transparent:true,roughness:.5}),p:new THREE.MeshStandardMaterial({color:0xcfd6e8,transparent:true,roughness:.5,opacity:0})};
+let th=.6,ph=1.3,dist=22,drag=false,lx=0,ly=0;
+function setCam(){camera.position.set(dist*Math.sin(ph)*Math.cos(th),dist*Math.cos(ph),dist*Math.sin(ph)*Math.sin(th));camera.lookAt(0,.3,0)}
+function resize(){const w=st.clientWidth,h=st.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()}
+new ResizeObserver(resize).observe(st);
+cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag)return;th-=(e.clientX-lx)*.008;ph=Math.min(2.9,Math.max(.25,ph-(e.clientY-ly)*.008));lx=e.clientX;ly=e.clientY});
+cv.addEventListener('pointerup',()=>drag=false);cv.addEventListener('pointercancel',()=>drag=false);
+cv.addEventListener('wheel',e=>{e.preventDefault();dist=Math.min(70,Math.max(7,dist*(1+e.deltaY*.001)))},{passive:false});
+
+// ---- Mô phỏng ----
+const T1=2.6,T2=2.8,clamp=(x,a=0,b=1)=>Math.min(b,Math.max(a,x)),ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+const rotY=(r,a)=>{const c=Math.cos(a),s=Math.sin(a);return new V(r.x*c+r.z*s,r.y,-r.x*s+r.z*c)};
+const rq=()=>new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random()*6.28,Math.random()*6.28,Math.random()*6.28));
+let A=[],B=[],t=0,playing=true,speed=1,lastStage=-1,STG=[],cur=null;
+function build(rx,vi){
+  while(group.children.length)group.remove(group.children[0]);
+  const ri=rx.R,pi=rx.V[vi].P,nR=ri.length,nP=pi.length;A=[];B=[];
+  const radOf=id=>Math.max(...MOLS[id].a.map(([e,x,y,z])=>Math.hypot(x,y,z)*S+EL[e][1]));
+  const mr=nR>1?Math.max(...ri.map(radOf))/Math.sin(Math.PI/nR)+.9:0,R0=nR>1?mr+7:0;
+  const pr=nP>1?Math.max(...pi.map(radOf))/Math.sin(Math.PI/nP)+.9:0;
+  const RB=[];
+  ri.forEach((id,i)=>{
+    const a=i/nR*Math.PI*2+.4,dv=new V(Math.cos(a),0,Math.sin(a));
+    const mc=dv.clone().multiplyScalar(mr),sc=dv.clone().multiplyScalar(R0).setY(i%2?1.2:-1.2),q=rq(),base=A.length;
+    MOLS[id].a.forEach(([el,x,y,z])=>{const rel=new V(x*S,y*S,z*S).applyQuaternion(q);A.push({el,rel,sc,mc,mp:mc.clone().add(rel)})});
+    MOLS[id].b.forEach(([i,j,o])=>RB.push([base+i,base+j,o]));
+  });
+  const pm=pi.map((id,i)=>{const a=i/nP*Math.PI*2+1.2;return{id,pc:nP>1?new V(Math.cos(a)*pr,0,Math.sin(a)*pr):new V()}});
+  let best=null;
+  for(let k=0;k<250;k++){
+    const PA=[],PB=[];
+    pm.forEach(m=>{const q=rq(),base=PA.length;MOLS[m.id].a.forEach(([el,x,y,z])=>PA.push({el,rel:new V(x*S,y*S,z*S).applyQuaternion(q),pc:m.pc}));MOLS[m.id].b.forEach(([i,j,o])=>PB.push([base+i,base+j,o]))});
+    if(PA.length!==A.length)throw new Error('phương trình chưa bảo toàn nguyên tử');
+    const used=new Set(),asg=[];let cost=0;
+    PA.map((p,j)=>j).sort((a,b)=>(PA[a].el==='H')-(PA[b].el==='H')).forEach(j=>{
+      const p=PA[j],tp=p.pc.clone().add(p.rel);let bi=-1,bd=1e9;
+      A.forEach((r,i)=>{if(r.el!==p.el||used.has(i))return;const dd=r.mp.distanceTo(tp);if(dd<bd){bd=dd;bi=i}});
+      if(bi<0)throw new Error('không bảo toàn nguyên tố');used.add(bi);asg[j]=bi;cost+=bd});
+    if(!best||cost<best.cost)best={PA,PB,asg,cost};
+  }
+  best.PA.forEach((p,j)=>A[best.asg[j]].p=p);
+  A.forEach(a=>{a.m=new THREE.Mesh(sphG,new THREE.MeshStandardMaterial({color:EL[a.el][0],roughness:.35,metalness:.1}));a.m.scale.setScalar(EL[a.el][1]);group.add(a.m)});
+  const mkb=(i,j,o,type)=>{const ms=[];for(let k=0;k<o;k++){const m=new THREE.Mesh(cylG,bmat[type]);group.add(m);ms.push(m)}B.push({i,j,o,type,ms})};
+  RB.forEach(([i,j,o])=>mkb(i,j,o,'r'));
+  best.PB.forEach(([i,j,o])=>mkb(best.asg[i],best.asg[j],o,'p'));
+  t=0;lastStage=-1;
+  dist=clamp(R0*(camera.aspect<1?3:1.75)+4,16,60);
+}
+const UP=new V(0,1,0),PX=new V(1,0,0);
+function place(t){
+  const u=clamp((t-T1)/T2),eu=ease(u),sp=Math.max(0,t-T1-T2)*.5;
+  A.forEach((a,i)=>{
+    let v;
+    if(t<T1){v=a.sc.clone().lerp(a.mc,ease(t/T1)).add(rotY(a.rel,t*.4));v.y+=Math.sin(t*3+i)*.06}
+    else if(u<1){
+      const s0=a.mc.clone().add(rotY(a.rel,T1*.4)),s1=a.p.pc.clone().add(a.p.rel),w=Math.sin(Math.PI*eu);
+      v=s0.lerp(s1,eu);v.y+=w*(1+.5*Math.sin(i*2.3));v.x+=Math.sin(t*18+i*1.7)*.14*w;v.z+=Math.cos(t*16+i*2.1)*.14*w;
+    }else v=a.p.pc.clone().add(rotY(a.p.rel,sp));
+    a.pos=v;a.m.position.copy(v);
+  });
+  bmat.r.opacity=t<T1?1:1-clamp(u/.4);
+  bmat.p.opacity=clamp((u-.55)/.4);
+  B.forEach(b=>{
+    const op=b.type==='r'?bmat.r.opacity:bmat.p.opacity,p1=A[b.i].pos,p2=A[b.j].pos,dd=p2.clone().sub(p1),len=dd.length();
+    dd.normalize();const pp=new V().crossVectors(dd,Math.abs(dd.y)>.9?PX:UP).normalize();
+    b.ms.forEach((m,k)=>{m.visible=op>.02;m.position.copy(p1).addScaledVector(dd,len/2).addScaledVector(pp,.2*(k-(b.o-1)/2));
+      m.quaternion.setFromUnitVectors(UP,dd);m.scale.set(1,len,1)});
+  });
+  const w=u>0&&u<1?Math.sin(Math.PI*u):0;
+  glow.visible=w>0;glow.scale.setScalar(1+4*w);glow.material.opacity=.3*w*w;flash.intensity=w*w*6;
+  const g=t<T1?0:u<1?1:2;
+  if(g!==lastStage){lastStage=g;$('#phase').textContent=STG[g]}
+  $('#bar').style.width=Math.min(100,t/(T1+T2)*100)+'%';
+}
+
+// ---- Giao diện ----
+function parse(v){
+  v=v.replace(/[₀-₉]/g,c=>c.charCodeAt(0)-8320).replace(/→|=>|->|⟶/g,'>').split('>')[0];
+  return v.split(/[+,&]/).map(norm).map(x=>x.replace(/^\d+(?=[a-z(])/,'')).filter(x=>x&&!/^(h|h\+|h3o|xt|t°|to|t0|h2so4.*|\(.*\))$/.test(x));
+}
+const idOf=x=>AL[x]||AL[x.replace(/-/g,'')];
+function run(){
+  const raw=parse($('#in').value),msg=$('#msg');msg.textContent='';
+  if(!raw.length){msg.textContent='Hãy nhập ít nhất một chất, ví dụ CH2=CH2 + Br2.';return}
+  const unk=raw.filter(x=>!idOf(x));
+  if(unk.length){msg.textContent='Chưa nhận ra: '+unk.join(', ')+'. Thử công thức như C2H4, HCl hoặc chọn một gợi ý bên dưới.';return}
+  const key=[...new Set(raw.map(idOf))].sort().join('+'),rx=RX.find(r=>r.key===key);
+  if(!rx){msg.textContent='Chưa có phản ứng giữa các chất này. Chọn một gợi ý bên dưới.';return}
+  show(rx,0);
+}
+function show(rx,vi){
+  try{build(rx,vi)}catch(e){$('#msg').textContent='Không dựng được phản ứng: '+e.message;return}
+  cur={rx,vi};const v=rx.V[vi];document.querySelectorAll('#chips button').forEach(b=>b.setAttribute('aria-current',RX[+b.dataset.i]===rx));
+  STG=['1/3 · Các chất phản ứng tiến lại gần nhau',rx.t==='AE'?'2/3 · Nối đôi C=C mở ra, tạo carbocation trung gian rồi kết hợp với anion':'2/3 · Nucleophile CN⁻ tấn công C(δ+) của C=O, rồi H⁺ gắn vào O','3/3 · Sản phẩm đã tạo thành'];
+  $('#eq').innerHTML=rx.R.map(i=>fh(MOLS[i].f)).join(' + ')+'<i>→</i>'+v.P.map(i=>fh(MOLS[i].f)).join(' + ');
+  $('#rname').innerHTML=(rx.t==='AE'?'Cộng electrophile (A<sub>E</sub>)':'Cộng nucleophile (A<sub>N</sub>)')+' · '+rx.d+'<br>'+rx.R.map(i=>MOLS[i].n).join(' + ')+' → '+v.P.map(i=>MOLS[i].n).join(' + ');
+  $('#vars').innerHTML=rx.V.length>1?rx.V.map((x,i)=>'<button type="button" data-v="'+i+'" aria-pressed="'+(i===vi)+'">'+x.lab+'</button>').join(''):'';
+  const els=[...new Set(A.map(a=>a.el))];
+  $('#legend').innerHTML=els.map(e=>'<span><b style="background:#'+EL[e][0].toString(16).padStart(6,'0')+'"></b>'+e+' · '+EL[e][2]+'</span>').join('');
+  playing=true;$('#pp').textContent='Tạm dừng';
+}
+$('#f').addEventListener('submit',e=>{e.preventDefault();run()});
+const grp=(t,h)=>'<span class="g">'+h+'</span>'+RX.map((r,i)=>r.t===t?'<button type="button" data-i="'+i+'"><b>'+r.R.map(x=>fh(MOLS[x].f)).join(' + ')+'</b><small>'+r.d+'</small></button>':'').join('');
+$('#chips').innerHTML=grp('AE','Cộng electrophile (A<sub>E</sub>) vào nối đôi C=C của alkene')+grp('AN','Cộng nucleophile (A<sub>N</sub>) vào nhóm carbonyl C=O');
+$('#chips').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const r=RX[+b.dataset.i];$('#in').value=r.R.map(x=>MOLS[x].f).join(' + ');show(r,0)});
+$('#vars').addEventListener('click',e=>{const b=e.target.closest('button');if(b&&cur)show(cur.rx,+b.dataset.v)});
+$('#pp').onclick=()=>{playing=!playing;$('#pp').textContent=playing?'Tạm dừng':'Tiếp tục'};
+$('#rp').onclick=()=>{t=0;playing=true;$('#pp').textContent='Tạm dừng'};
+$('#sp').onchange=e=>speed=+e.target.value;
+const clock=new THREE.Clock();
+function loop(){requestAnimationFrame(loop);const dt=Math.min(clock.getDelta(),.05);
+  if(playing)t+=dt*speed;if(!drag)th+=dt*.1;
+  if(A.length)place(t);setCam();renderer.render(scene,camera)}
+resize();run();loop();
+</script>
+</body>
+</html>
